@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flashcards Árabe – Familia</title>
+  
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #1a1a2e;
+      color: #e8e0d0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 20px 48px;
+    }
+
+    h1 {
+      font-family: Arial, sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: #f0c070;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      font-weight: 300;
+      color: #8a8090;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 10px 28px;
+      border-radius: 30px;
+      border: 1px solid #3a3050;
+      background: transparent;
+      color: #e8e0d0;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+    }
+
+    .btn:hover { background: #2a2045; border-color: #f0c070; color: #f0c070; }
+    .btn:active { transform: scale(0.97); }
+    .btn.active { background: #f0c070; color: #1a1a2e; border-color: #f0c070; }
+
+    .card-container {
+      perspective: 1200px;
+      width: 100%;
+      max-width: 700px;
+      height: 340px;
+      cursor: pointer;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(.4,0,.2,1);
+    }
+
+    .card.flipped { transform: rotateY(180deg); }
+
+    .side {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 36px;
+      text-align: center;
+      gap: 16px;
+    }
+
+    .front { background: #12122a; border: 1px solid #2e2850; }
+    .back  { transform: rotateY(180deg); background: #1e1840; border: 1px solid #f0c070; }
+
+    .arabic-word {
+      font-family: Arial, sans-serif;
+      font-size: 62px;
+      direction: rtl;
+      color: #f0c070;
+      line-height: 1.2;
+    }
+
+    .hint { font-size: 12px; color: #4a4060; letter-spacing: 2px; text-transform: uppercase; }
+
+    .arabic-back {
+      font-family: Arial, sans-serif;
+      font-size: 38px;
+      direction: rtl;
+      color: #f0c070;
+      line-height: 1.2;
+    }
+
+    .roman {
+      font-size: 20px;
+      font-style: italic;
+      color: #a090c0;
+      font-weight: 300;
+    }
+
+    .meaning-es {
+      font-size: 26px;
+      font-weight: 700;
+      color: #e8e0d0;
+    }
+
+    .help {
+      margin-top: 24px;
+      font-size: 11px;
+      color: #3a3050;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      .arabic-word { font-size: 44px; }
+      .arabic-back { font-size: 28px; }
+      .card-container { height: 300px; }
+      h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>FAMILIA · العائلة</h1>
+  <div class="subtitle">al-ʿāʾila · Estados civiles y miembros de la familia</div>
+
+  <div class="controls">
+    <button class="btn" onclick="prevCard()">⬅ Anterior</button>
+    <button class="btn" onclick="flipCard()">🔄 Girar</button>
+    <button class="btn" onclick="nextCard()">Siguiente ➡</button>
+    <button class="btn" id="randomBtn" onclick="toggleRandom()">🔀 Aleatorio: NO</button>
+    <button class="btn" onclick="shuffleCards()">⇄ Mezclar</button>
+  </div>
+
+  <div class="card-container">
+    <div class="card" id="card" onclick="flipCard()">
+      <div class="side front" id="front"></div>
+      <div class="side back"  id="back"></div>
+    </div>
+  </div>
+
+  <div class="help">espacio = girar · ← → = navegar</div>
+
+  <script>
+    const data = [
+      { ar: 'أعزب', ro: 'aʿzab', es: 'soltero' },
+      { ar: 'عزباء', ro: 'ʿazbāʾ', es: 'soltera' },
+      { ar: 'متزوج', ro: 'mutazawwij', es: 'casado' },
+      { ar: 'متزوجة', ro: 'mutazawwija', es: 'casada' },
+      { ar: 'مطلق', ro: 'muṭallaq', es: 'divorciado' },
+      { ar: 'مطلقة', ro: 'muṭallaqa', es: 'divorciada' },
+      { ar: 'أرمل', ro: 'armal', es: 'viudo' },
+      { ar: 'أرملة', ro: 'armala', es: 'viuda' },
+      { ar: 'مخطوب', ro: 'makhṭūb', es: 'prometido' },
+      { ar: 'مخطوبة', ro: 'makhṭūba', es: 'prometida' },
+      { ar: 'مرتبط', ro: 'murtabiṭ', es: 'en pareja (él)' },
+      { ar: 'مرتبطة', ro: 'murtabiṭa', es: 'en pareja (ella)' },
+      { ar: 'غير مرتبط', ro: 'ghayr murtabiṭ', es: 'sin pareja (él)' },
+      { ar: 'غير مرتبطة', ro: 'ghayr murtabiṭa', es: 'sin pareja (ella)' },
+      { ar: 'في علاقة', ro: 'fī ʿalāqa', es: 'en una relación' },
+      { ar: 'في علاقة جدية', ro: 'fī ʿalāqa jiddiyya', es: 'en una relación seria' },
+      { ar: 'في علاقة مفتوحة', ro: 'fī ʿalāqa maftūḥa', es: 'en una relación abierta' },
+      { ar: 'منفصل', ro: 'munfaṣil', es: 'separado' },
+      { ar: 'منفصلة', ro: 'munfaṣila', es: 'separada' },
+      { ar: 'متزوج حديثاً', ro: 'mutazawwij ḥadīthan', es: 'recién casado' },
+      { ar: 'متزوجة حديثاً', ro: 'mutazawwija ḥadīthan', es: 'recién casada' },
+      { ar: 'أب أعزب', ro: 'ab aʿzab', es: 'padre soltero' },
+      { ar: 'أم عزباء', ro: 'umm ʿazbāʾ', es: 'madre soltera' },
+      { ar: 'بدون أطفال', ro: 'bidūn aṭfāl', es: 'sin hijos' },
+      { ar: 'لديه أطفال', ro: 'ladayhi aṭfāl', es: 'tiene hijos (él)' },
+      { ar: 'لديها أطفال', ro: 'ladayhā aṭfāl', es: 'tiene hijos (ella)' },
+      { ar: 'يعيش وحده', ro: 'yaʿīsh waḥdah', es: 'vive solo' },
+      { ar: 'تعيش وحدها', ro: 'taʿīsh waḥdahā', es: 'vive sola' },
+      { ar: 'يعيش مع شريكه', ro: 'yaʿīsh maʿa sharīkihi', es: 'vive con su pareja (él)' },
+      { ar: 'تعيش مع شريكتها', ro: 'taʿīsh maʿa sharīkatihā', es: 'vive con su pareja (ella)' },
+      { ar: 'زوج', ro: 'zawj', es: 'marido, esposo' },
+      { ar: 'زوجة', ro: 'zawja', es: 'mujer, esposa' },
+      { ar: 'شريك', ro: 'sharīk', es: 'pareja (m)' },
+      { ar: 'شريكة', ro: 'sharīka', es: 'pareja (f)' },
+      { ar: 'حبيب', ro: 'ḥabīb', es: 'novio' },
+      { ar: 'حبيبة', ro: 'ḥabība', es: 'novia' },
+      { ar: 'خطيب', ro: 'khaṭīb', es: 'prometido' },
+      { ar: 'خطيبة', ro: 'khaṭība', es: 'prometida' },
+      { ar: 'زوج سابق', ro: 'zawj sābiq', es: 'exmarido' },
+      { ar: 'زوجة سابقة', ro: 'zawja sābiqa', es: 'exmujer' },
+      { ar: 'حبيب سابق', ro: 'ḥabīb sābiq', es: 'exnovio' },
+      { ar: 'حبيبة سابقة', ro: 'ḥabība sābiqa', es: 'exnovia' },
+      { ar: 'مغرم', ro: 'mughram', es: 'enamorado' },
+      { ar: 'مغرمة', ro: 'mughrama', es: 'enamorada' },
+      { ar: 'عاشق', ro: 'ʿāshiq', es: 'amante, enamorado' },
+      { ar: 'عاشقة', ro: 'ʿāshiqa', es: 'amante, enamorada' },
+      { ar: 'أب', ro: 'ab', es: 'padre' },
+      { ar: 'أم', ro: 'umm', es: 'madre' },
+      { ar: 'ابن', ro: 'ibn', es: 'hijo' },
+      { ar: 'ابنة', ro: 'ibna', es: 'hija' },
+      { ar: 'أخ', ro: 'akh', es: 'hermano' },
+      { ar: 'أخت', ro: 'ukht', es: 'hermana' },
+      { ar: 'جد', ro: 'jadd', es: 'abuelo' },
+      { ar: 'جدة', ro: 'jadda', es: 'abuela' },
+      { ar: 'عم', ro: 'ʿamm', es: 'tío paterno' },
+      { ar: 'عمة', ro: 'ʿamma', es: 'tía paterna' },
+      { ar: 'خال', ro: 'khāl', es: 'tío materno' },
+      { ar: 'خالة', ro: 'khāla', es: 'tía materna' },
+      { ar: 'ابن عم', ro: 'ibn ʿamm', es: 'primo (hijo del tío paterno)' },
+      { ar: 'بنت عم', ro: 'bint ʿamm', es: 'prima (hija del tío paterno)' },
+      { ar: 'ابن خال', ro: 'ibn khāl', es: 'primo (hijo del tío materno)' },
+      { ar: 'بنت خال', ro: 'bint khāl', es: 'prima (hija del tío materno)' },
+      { ar: 'حفيد', ro: 'ḥafīd', es: 'nieto' },
+      { ar: 'حفيدة', ro: 'ḥafīda', es: 'nieta' },
+      { ar: 'قريب', ro: 'qarīb', es: 'familiar, pariente' },
+      { ar: 'أقارب', ro: 'aqārib', es: 'familiares' },
+      { ar: 'عائلة', ro: 'ʿāʾila', es: 'familia' },
+      { ar: 'عائلة كبيرة', ro: 'ʿāʾila kabīra', es: 'familia grande' },
+      { ar: 'عائلة صغيرة', ro: 'ʿāʾila ṣaghīra', es: 'familia pequeña' },
+      { ar: 'رب أسرة', ro: 'rabb usra', es: 'cabeza de familia' },
+      { ar: 'ربة منزل', ro: 'rabbat manzil', es: 'ama de casa' },
+      { ar: 'وحيد', ro: 'waḥīd', es: 'solo' },
+      { ar: 'وحيدة', ro: 'waḥīda', es: 'sola' },
+      { ar: 'مستقل', ro: 'mustaqill', es: 'independiente (m)' },
+      { ar: 'مستقلة', ro: 'mustaqilla', es: 'independiente (f)' },
+    ];
+
+    let cards = [...data];
+    let current = 0;
+    let randomMode = false;
+
+    const card      = document.getElementById('card');
+    const frontEl   = document.getElementById('front');
+    const backEl    = document.getElementById('back');
+    const randomBtn = document.getElementById('randomBtn');
+
+    function renderCard() {
+      const c = cards[current];
+      card.classList.remove('flipped');
+      frontEl.innerHTML = `
+        <div class="arabic-word">${c.ar}</div>
+        <div class="hint">toca para ver la traducción</div>
+      `;
+      backEl.innerHTML = `
+        <div class="arabic-back">${c.ar}</div>
+        <div class="roman">${c.ro}</div>
+        <div class="meaning-es">${c.es}</div>
+      `;
+    }
+
+    function flipCard() { card.classList.toggle('flipped'); }
+
+    function nextCard() {
+      current = randomMode
+        ? Math.floor(Math.random() * cards.length)
+        : (current + 1) % cards.length;
+      renderCard();
+    }
+
+    function prevCard() {
+      current = randomMode
+        ? Math.floor(Math.random() * cards.length)
+        : (current - 1 + cards.length) % cards.length;
+      renderCard();
+    }
+
+    function toggleRandom() {
+      randomMode = !randomMode;
+      randomBtn.textContent = `🔀 Aleatorio: ${randomMode ? 'SÍ' : 'NO'}`;
+      randomBtn.classList.toggle('active', randomMode);
+    }
+
+    function shuffleCards() {
+      for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+      }
+      current = 0;
+      renderCard();
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space') { e.preventDefault(); flipCard(); }
+      if (e.key === 'ArrowRight') nextCard();
+      if (e.key === 'ArrowLeft') prevCard();
+    });
+
+    renderCard();
+  </script>
+
+</body>
+</html>
